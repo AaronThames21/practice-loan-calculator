@@ -8,7 +8,11 @@
 const request = require("supertest");
 const app = require("../src/app");
 const store = require("../src/loanStore");
-const { calcMonthlyPayment, calcRemainingBalance, calcTotalPaid } = require("../src/balanceCalculator");
+const {
+  calcMonthlyPayment,
+  calcRemainingBalance,
+  calcTotalPaid,
+} = require("../src/balanceCalculator");
 
 beforeEach(() => {
   store.reset();
@@ -46,7 +50,9 @@ describe("POST /loans — creating a loan", () => {
   });
 
   test("returns 400 if any required field is missing", async () => {
-    const res = await request(app).post("/loans").send({ borrowerName: "Alex" });
+    const res = await request(app)
+      .post("/loans")
+      .send({ borrowerName: "Alex" });
     expect(res.status).toBe(400);
   });
 
@@ -125,7 +131,9 @@ describe("POST /loans/:id/payments — logging payments", () => {
     await createTestLoan();
     await request(app).post("/loans/loan_1/payments").send({ amount: 100 });
     await request(app).post("/loans/loan_1/payments").send({ amount: 200 });
-    const res = await request(app).post("/loans/loan_1/payments").send({ amount: 150 });
+    const res = await request(app)
+      .post("/loans/loan_1/payments")
+      .send({ amount: 150 });
 
     expect(res.body.payments).toHaveLength(3);
   });
@@ -233,7 +241,7 @@ describe("DELETE /loans/:id — deleting a loan", () => {
 describe("balanceCalculator — pure math functions", () => {
   test("calcMonthlyPayment — standard loan", () => {
     const payment = calcMonthlyPayment(1200, 5, 12);
-    expect(payment).toBe(102.53); // verified against standard amortization formula
+    expect(payment).toBe(102.73); // verified against standard amortization formula
   });
 
   test("calcMonthlyPayment — 0% APR divides evenly", () => {
