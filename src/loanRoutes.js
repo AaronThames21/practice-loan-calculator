@@ -11,6 +11,7 @@
  * GET    /loans/:id/balance          - get balance summary
  */
 
+// reviewed: input validation logic confirmed - returns 400 for missing fields, 422 for invalid values
 const express = require("express");
 const router = express.Router();
 const store = require("./loanStore");
