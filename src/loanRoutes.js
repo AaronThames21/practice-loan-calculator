@@ -86,7 +86,8 @@ router.post("/:id/payments", (req, res) => {
     return res.status(422).json({ error: "amount must be a positive number" });
   }
 
-  // Warn if overpaying but still allow it
+  // Overpayment is allowed but flagged — useful for early payoff scenarios
+// In a real system this would trigger a refund event or flag the account for review
   const { remainingBalance } = calcLoanSummary(loan);
   if (amount > remainingBalance && remainingBalance > 0) {
     // Allow it but note it in the response
