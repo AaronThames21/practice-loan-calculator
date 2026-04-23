@@ -1,1 +1,2 @@
-# Loan Tracker — Balance & Payment API
+# Loan Repayment Tracker API
+
