@@ -11,7 +11,10 @@ const store = require("../src/loanStore");
 const {
   calcMonthlyPayment,
   calcRemainingBalance,
+  calcLateFee,
   calcTotalPaid,
+  calcPenaltyAmount,
+  calcTotalInterest,
 } = require("../src/balanceCalculator");
 
 beforeEach(() => {
@@ -264,3 +267,78 @@ describe("balanceCalculator — pure math functions", () => {
     expect(calcRemainingBalance(1200, payments)).toBe(0);
   });
 });
+
+//------- Calculate Late Fees -------------------------------------
+describe('calcLateFee - late payment fee calculation' , () => { 
+  test('calculate standard late fee correctly' , () => {
+    // remainingBalance=1000, flatFee=25, feePercent=1.5
+    // fee = 25 + (1000 * 1.5/100) = 25 + 15 = 40
+    expect(calcLateFee(1000, 25, 1.5)).toBe(40);
+  });
+
+  test('returns 0 when loan isfully paid off', () => {
+    expect(calcLateFee(0, 25, 1.5)).toBe(0)
+  });
+
+  test('uses default values when not provide', () => {
+    // flatFee defaults to 25, feePercent defaults to 1.5
+    // fee = 25 + (1000 * 1.5/100) = 40
+    expect(calcLateFee(1000)).toBe(40);
+  });
+});
+
+//------------- Calculate Penalty Amount ----------------------------
+
+describe('calcPenatlyAmount - penalty calculation', () => {
+  test('returns 0 when loan is fully paid off', () => {
+    // remainingBalance=0, daysPastDue=10
+    expect(calcPenaltyAmount(0,10)).toBe(0);
+  });
+
+  test('returns 0 when not past due', () => {
+    // remainingBalance=1000, daysPastDue=0
+    expect(calcPenaltyAmount(1000, 0)).toBe(0)
+  });
+
+  test('charges 1% interest when 1-30 days late', () => {
+    // remainingBalance=1000, daysPastDue=15
+   // 1000 * 0.01 = 10
+    expect(calcPenaltyAmount(1000, 15)).toBe(10)
+  });
+
+  test('charges 2% percent interest when 30-60 days late', () => {
+     // remainingBalance=1000, daysPastDue=45
+    // 1000 * 0.02 = 20
+    expect(calcPenaltyAmount(1000, 45)).toBe(20)
+  });
+
+  test('charges 5% percent interest when 30-60 days late', () => {
+    // remainingBalance=1000, daysPastDue=90
+    // 1000 * 0.05 = 50
+    expect(calcPenaltyAmount(1000, 90)).toBe(50)
+  });
+});
+
+describe('calculate total interest rate', () => {
+  test('loan not fully paid off - returns 0', () => {
+    expect (calcTotalInterest(1200, [{amount: 100}])).toBe(0)
+  });
+
+  test('returns 0 interest for 0% apr completed loan', () => {
+    const payments = [
+      {amount: 100},
+      {amount: 100},
+      {amount: 100}
+    ];
+    expect(calcTotalInterest(300, payments)).toBe(0)
+  });
+
+  test('returns correct interest for loan with interest', () => {
+    const payments = [
+      {amount: 103},
+      {amount: 103},
+      {amount: 103}
+    ];
+    expect(calcTotalInterest(300, payments)).toBe(9)
+  })
+})

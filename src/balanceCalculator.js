@@ -17,13 +17,13 @@
  * @returns {number} monthly payment rounded to 2 decimal places
  */
 function calcMonthlyPayment(principal, annualRate, termMonths) {
-  if (annualRate === 0) {
-    return parseFloat((principal / termMonths).toFixed(2));
-  }
-  const r = annualRate / 100 / 12; // monthly interest rate as decimal
-  const n = termMonths;
-  const payment = (principal * (r * Math.pow(1 + r, n))) / (Math.pow(1 + r, n) - 1);
-  return parseFloat(payment.toFixed(2));
+    if ( annualRate === 0) {
+      return parseFloat(principal / termMonths)
+    }
+    const r = annualRate / 100 / 12;
+    const n = termMonths;
+    const payment = (principal * (r * Math.pow(1 + r, n))) / (Math.pow(1 + r, n) - 1);
+    return parseFloat(payment.toFixed(2));
 }
 
 /**
@@ -47,9 +47,17 @@ function calcTotalPaid(payments) {
  * @returns {number} remaining balance rounded to 2 decimal places
  */
 function calcRemainingBalance(principal, payments) {
-  const totalPaid = calcTotalPaid(payments);
-  const remaining = Math.max(0, principal - totalPaid);
-  return parseFloat(remaining.toFixed(2));
+    let totalPaid = 0;
+    for (const payment of payments) {
+        totalPaid += payment.amount;
+    }
+    const remaining = principal - totalPaid;
+
+    if (remaining < 0) {
+      return 0;
+    }
+
+    return parseFloat(remaining.toFixed(2));
 }
 
 /**
@@ -59,12 +67,17 @@ function calcRemainingBalance(principal, payments) {
  * @returns {Object} summary with monthly payment, total paid, remaining balance
  */
 function calcLoanSummary(loan) {
-  const monthlyPayment = calcMonthlyPayment(loan.principal, loan.annualRate, loan.termMonths);
+  const monthlyPayment = calcMonthlyPayment(
+    loan.principal,
+    loan.annualRate,
+    loan.termMonths
+  );
   const totalPaid = calcTotalPaid(loan.payments);
   const remainingBalance = calcRemainingBalance(loan.principal, loan.payments);
-  const percentPaid = loan.principal > 0
-    ? parseFloat(((totalPaid / loan.principal) * 100).toFixed(1))
-    : 0;
+  const percentPaid =
+    loan.principal > 0
+      ? parseFloat(((totalPaid / loan.principal) * 100).toFixed(1))
+      : 0;
 
   return {
     monthlyPayment,
@@ -76,9 +89,51 @@ function calcLoanSummary(loan) {
   };
 }
 
+function calcLateFee(remainingBalance, flatFee = 25, feePercent = 1.5) {
+  if (remainingBalance === 0) {
+    return 0;
+  }
+  const lateFee = flatFee + (remainingBalance * feePercent) / 100;
+  return parseFloat(lateFee.toFixed(2));
+}
+
+function calcPenaltyAmount(remainingBalance, daysPastDue) {
+  if ( remainingBalance === 0) {
+    return 0;
+  }
+  if (daysPastDue <= 0) {
+    return 0;
+  }
+  if (daysPastDue <= 30) {
+    return parseFloat((remainingBalance * 0.01).toFixed(2));
+  }
+  if (daysPastDue <= 60) {
+    return parseFloat((remainingBalance * 0.02).toFixed(2));
+  }
+  return parseFloat((remainingBalance * 0.05).toFixed(2));
+}
+
+function calcTotalInterest(principal, payments) {
+   // Step 1 — check if loan is fully paid
+   const remainingBalance = calcRemainingBalance(principal, payments);
+   if(remainingBalance > 0) {
+    return 0;
+   }
+   // Step 2 - Calculate total paid
+   const totalPaid = calcTotalPaid(payments);
+   
+   const totalInterest = totalPaid - principal
+
+   return parseFloat(totalInterest.toFixed(2))
+  }
+
+
 module.exports = {
   calcMonthlyPayment,
   calcTotalPaid,
   calcRemainingBalance,
   calcLoanSummary,
+  calcLateFee,
+  calcPenaltyAmount,
+  calcTotalInterest,
 };
